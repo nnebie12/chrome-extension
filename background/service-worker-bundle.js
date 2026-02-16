@@ -1,8 +1,3 @@
-/**
- * SERVICE WORKER - Version compatible sans ES6 modules
- * Toutes les classes sont intégrées directement
- */
-
 console.log('🚀 Service Worker démarré');
 
 // ==================== API CLIENT ====================

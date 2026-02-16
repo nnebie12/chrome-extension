@@ -1,8 +1,3 @@
-/**
- * POPUP - Recipe AI Assistant
- * Version corrigée avec gestion d'erreurs améliorée
- */
-
 console.log('🚀 Popup chargé');
 
 let currentTab = 'home';
@@ -15,6 +10,130 @@ document.addEventListener('DOMContentLoaded', async () => {
   console.log('🔧 Initialisation du popup...');
   await init();
 });
+
+async function init() {
+  try {
+    await loadUser();
+    setupTabs();
+    setupActionButtons();
+    setupSearch();
+    setupShoppingList();
+    
+    // On lance le chargement initial
+    await Promise.all([
+      loadRecommendations(),
+      loadShoppingList()
+    ]);
+    
+    updateGreeting();
+    
+    // TRACKING: Ouverture de l'extension
+    trackBehavior('open_extension', { userId: currentUser.id });
+    
+    console.log('✅ Popup initialisé avec succès');
+  } catch (error) {
+    console.error('❌ Erreur initialisation:', error);
+    showError('Connexion au serveur impossible');
+  }
+}
+
+async function loadRecommendations(forceRefresh = false) {
+  const listContainer = document.getElementById('recommendationsList');
+  if (!listContainer) return;
+
+  // Animation de chargement
+  listContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Analyse de vos goûts...</p></div>';
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'get-recommendations',
+      userId: currentUser.id,
+      force: forceRefresh
+    });
+    
+    if (response.success && response.recommendations) {
+      // Normalisation des données pour accepter plusieurs formats de réponse API
+      const recipes = response.recommendations.recommendations || response.recommendations;
+      
+      if (!Array.isArray(recipes) || recipes.length === 0) {
+        renderEmptyState(listContainer, '🍳', 'Aucune recommandation', 'Cuisinez davantage pour que l\'IA apprenne !');
+      } else {
+        displayRecommendations(recipes);
+      }
+    } else {
+      // Gestion spécifique des erreurs 500 ou CORS (vu précédemment)
+      throw new Error(response.error || 'Erreur serveur (CORS ou Backend)');
+    }
+  } catch (error) {
+    renderErrorState(listContainer, error.message);
+  }
+}
+
+// Recherche avec tracking
+async function performSearch(query) {
+  if (!query.trim()) return;
+  
+  // TRACKING: Recherche effectuée
+  trackBehavior('search_query', { query });
+
+  const resultsContainer = document.getElementById('searchResults');
+  if (!resultsContainer) return;
+  
+  resultsContainer.innerHTML = '<div class="loading"><div class="spinner"></div><p>Recherche en cours...</p></div>';
+  
+  try {
+    const response = await chrome.runtime.sendMessage({
+      action: 'search-semantic',
+      query: query
+    });
+    
+    if (response.success && response.results) {
+      const recipes = response.results.results || response.results;
+      
+      if (!Array.isArray(recipes) || recipes.length === 0) {
+        renderEmptyState(resultsContainer, '🔍', 'Aucun résultat', 'Essayez avec d\'autres mots-clés');
+      } else {
+        resultsContainer.innerHTML = `<div class="search-results-list">${recipes.map(createRecipeCard).join('')}</div>`;
+        
+        // Event listeners pour les boutons de chaque recette
+        document.querySelectorAll('.btn-view-recipe').forEach(button => {
+          button.addEventListener('click', (e) => {
+            const recipeId = e.target.dataset.recipeId;
+            viewRecipe(recipeId, 'search_results');
+          });
+        });
+      }
+    } else {
+      throw new Error(response.error || 'Erreur de recherche');
+    }
+  } catch (error) {
+    renderErrorState(resultsContainer, error.message);
+  }
+}
+
+//  Ajout d'ingrédients avec tracking
+async function addShoppingItem(text) {
+  const newItem = {
+    id: Date.now(),
+    text: text,
+    checked: false,
+    addedAt: new Date().toISOString()
+  };
+  
+  shoppingList.push(newItem);
+  
+  // TRACKING: Ajout à la liste
+  trackBehavior('add_shopping_item', { item: text });
+
+  await chrome.runtime.sendMessage({
+    action: 'add-to-shopping-list',
+    item: text,
+    userId: currentUser.id
+  });
+  
+  displayShoppingList();
+  updateShoppingStats();
+}
 
 async function init() {
   try {
@@ -44,6 +163,16 @@ async function loadUser() {
     console.error('Erreur chargement utilisateur:', error);
     currentUser = { id: 1, nom: 'Utilisateur' };
   }
+}
+
+// AMÉLIORATION : Gestion centralisée des clics sur les recettes
+function viewRecipe(recipeId, source = 'unknown') {
+  // TRACKING: Clic sur une recette
+  trackBehavior('view_recipe', { recipeId, source });
+  
+  chrome.tabs.create({
+    url: `http://localhost:5173/recettes/${recipeId}`
+  });
 }
 
 function setupTabs() {
@@ -489,8 +618,31 @@ function showError(message) {
 // Fonction pour voir une recette
 function viewRecipe(recipeId) {
   chrome.tabs.create({
-    url: `http://localhost:3000/recettes/${recipeId}`
+    url: `http://localhost:5173/recettes/${recipeId}`
   });
+}
+
+// --- FONCTIONS UTILITAIRES ---
+
+function renderEmptyState(container, icon, title, sub) {
+  container.innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">${icon}</div>
+      <p>${title}</p>
+      <small>${sub}</small>
+    </div>`;
+}
+
+function renderErrorState(container, message) {
+  container.innerHTML = `
+    <div class="error-state">
+      <p>❌ Oups ! Un problème est survenu</p>
+      <small style="display:block; margin-bottom:10px;">${message}</small>
+      <button class="btn-view-recipe" id="retryBtn">Réessayer</button>
+    </div>`;
+  
+  const btn = container.querySelector('#retryBtn');
+  if(btn) btn.onclick = () => loadRecommendations(true);
 }
 
 console.log('✅ popup.js chargé et prêt');

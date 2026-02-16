@@ -1,8 +1,3 @@
-/**
- * CONTENT SCRIPT - Recipe AI Assistant
- * Injecté sur les sites de recettes pour extraire et sauvegarder les recettes
- */
-
 console.log('🔍 Recipe AI Assistant - Content Script actif');
 
 // Configuration des sélecteurs par site
