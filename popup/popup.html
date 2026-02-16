@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recipe AI Assistant</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-icon">🍳</span>
+        <h1>Recipe AI</h1>
+      </div>
+      <button class="settings-btn" id="settingsBtn" title="Paramètres">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v6m0 6v6m8-11.5v3m-16-3v3M20 12h-6m-2 0H6"/>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="home">
+        <span class="tab-icon">🏠</span>
+        <span class="tab-label">Accueil</span>
+      </button>
+      <button class="tab" data-tab="search">
+        <span class="tab-icon">🔍</span>
+        <span class="tab-label">Recherche</span>
+      </button>
+      <button class="tab" data-tab="shopping">
+        <span class="tab-icon">🛒</span>
+        <span class="tab-label">Liste</span>
+        <span class="badge" id="shoppingBadge">0</span>
+      </button>
+      <button class="tab" data-tab="saved">
+        <span class="tab-icon">💾</span>
+        <span class="tab-label">Sauvegardées</span>
+      </button>
+    </nav>
+
+    <!-- Content Area -->
+    <main class="content">
+      
+      <!-- Tab: Home -->
+      <div class="tab-content active" id="homeTab">
+        <div class="welcome-section" id="welcomeSection">
+          <div class="avatar">👨‍🍳</div>
+          <h2 id="greetingText">Bonjour !</h2>
+          <p class="subtitle">Que voulez-vous cuisiner aujourd'hui ?</p>
+        </div>
+
+        <div class="quick-actions">
+          <button class="action-card" id="quickRecipeBtn">
+            <span class="action-icon">⚡</span>
+            <span class="action-title">Recette rapide</span>
+            <span class="action-desc">Moins de 30 min</span>
+          </button>
+          <button class="action-card" id="surpriseMeBtn">
+            <span class="action-icon">🎲</span>
+            <span class="action-title">Surprise-moi</span>
+            <span class="action-desc">Découverte IA</span>
+          </button>
+        </div>
+
+        <section class="recommendations-section">
+          <div class="section-header">
+            <h3>🌟 Recommandations pour vous</h3>
+            <button class="refresh-btn" id="refreshRecommendations" title="Actualiser">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <path d="M23 4v6h-6M1 20v-6h6"/>
+                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+              </svg>
+            </button>
+          </div>
+          <div class="recommendations-list" id="recommendationsList">
+            <div class="loading">
+              <div class="spinner"></div>
+              <p>Chargement des recommandations...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Tab: Search -->
+      <div class="tab-content" id="searchTab">
+        <div class="search-section">
+          <div class="search-box">
+            <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input 
+              type="text" 
+              class="search-input" 
+              id="searchInput" 
+              placeholder="Ex: plat léger pour l'été..."
+            >
+          </div>
+
+          <div class="search-results" id="searchResults">
+            <div class="empty-state">
+              <div class="empty-icon">🔍</div>
+              <p>Recherchez une recette par mots-clés, ingrédients ou description...</p>
+              <div class="search-suggestions">
+                <p class="suggestions-title">Suggestions :</p>
+                <button class="suggestion-chip">poulet grillé</button>
+                <button class="suggestion-chip">dessert chocolat</button>
+                <button class="suggestion-chip">salade d'été</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Shopping List -->
+      <div class="tab-content" id="shoppingTab">
+        <div class="shopping-section">
+          <div class="add-item-section">
+            <input 
+              type="text" 
+              class="add-item-input" 
+              id="addItemInput" 
+              placeholder="Ajouter un ingrédient..."
+            >
+            <button class="add-item-btn" id="addItemBtn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="shopping-stats">
+            <div class="stat">
+              <span class="stat-value" id="totalItems">0</span>
+              <span class="stat-label">articles</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="checkedItems">0</span>
+              <span class="stat-label">cochés</span>
+            </div>
+            <button class="clear-checked-btn" id="clearCheckedBtn">
+              Effacer cochés
+            </button>
+          </div>
+
+          <div class="shopping-list" id="shoppingList">
+            <div class="empty-state">
+              <div class="empty-icon">🛒</div>
+              <p>Votre liste de courses est vide</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab: Saved Recipes -->
+      <div class="tab-content" id="savedTab">
+        <div class="saved-section">
+          <div class="empty-state">
+            <div class="empty-icon">💾</div>
+            <p>Aucune recette sauvegardée</p>
+            <small>Visitez Marmiton, 750g ou CuisineAZ et cliquez sur "Sauvegarder"</small>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <button class="footer-btn" id="openWebApp">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+          <polyline points="15 3 21 3 21 9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Ouvrir l'application
+      </button>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

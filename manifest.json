@@ -1,0 +1,48 @@
+{
+  "manifest_version": 3,
+  "name": "Recipe AI Assistant",
+  "version": "1.0.0",
+  "description": "Assistant intelligent pour découvrir, sauvegarder et planifier vos recettes avec l'IA",
+  "permissions": [
+    "storage",
+    "notifications",
+    "contextMenus",
+    "alarms",
+    "tabs",              
+    "webNavigation"
+  ],
+  "host_permissions": [
+    "http://localhost:8080/*",
+    "https://*.marmiton.org/*",
+    "https://*.750g.com/*",
+    "https://*.cuisineaz.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background/service-worker-bundle.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.marmiton.org/*",
+        "https://*.750g.com/*",
+        "https://*.cuisineaz.com/*"
+      ],
+      "js": ["content/content-script.js"],
+      "css": ["content/content-styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*", "popup/*"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

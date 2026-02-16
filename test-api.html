@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test API Recipe AI</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    .result {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f9f9f9;
+      border-left: 3px solid #667eea;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .error {
+      border-left-color: #f44336;
+      color: #f44336;
+    }
+    .success {
+      border-left-color: #4CAF50;
+      color: #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧪 Test API Recipe AI Assistant</h1>
+  
+  <div class="test-section">
+    <h2>1. Test connexion API</h2>
+    <button onclick="testConnection()">Tester la connexion</button>
+    <div id="connection-result" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>2. Test recommandations</h2>
+    <label>User ID: <input type="number" id="userId" value="1"></label>
+    <button onclick="testRecommendations()">Obtenir recommandations</button>
+    <div id="recommendations-result" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>3. Test recherche sémantique</h2>
+    <label>Requête: <input type="text" id="searchQuery" value="plat léger pour l'été" style="width: 300px;"></label>
+    <button onclick="testSearch()">Rechercher</button>
+    <div id="search-result" class="result"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>4. Test liste de courses</h2>
+    <button onclick="testShoppingList()">Récupérer liste</button>
+    <div id="shopping-result" class="result"></div>
+  </div>
+
+  <script>
+    const API_BASE = 'http://localhost:8080/api/';
+
+    function log(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      element.textContent = message;
+      element.className = `result ${type}`;
+    }
+
+    async function testConnection() {
+      log('connection-result', 'Test en cours...');
+      
+      try {
+        const response = await fetch(API_BASE + 'v1/recommendations/personalized/1');
+        const data = await response.json();
+        
+        log('connection-result', 
+          `✅ Connexion réussie!\n\nStatus: ${response.status}\n\nRéponse:\n${JSON.stringify(data, null, 2)}`,
+          'success'
+        );
+      } catch (error) {
+        log('connection-result', 
+          `❌ Erreur de connexion:\n${error.message}\n\nVérifiez que votre API est démarrée sur http://localhost:8080`,
+          'error'
+        );
+      }
+    }
+
+    async function testRecommendations() {
+      const userId = document.getElementById('userId').value;
+      log('recommendations-result', 'Chargement...');
+      
+      try {
+        const response = await fetch(API_BASE + `v1/recommendations/personalized/${userId}`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        log('recommendations-result', 
+          `✅ ${data.recommendations?.length || 0} recommandations trouvées\n\n${JSON.stringify(data, null, 2)}`,
+          'success'
+        );
+      } catch (error) {
+        log('recommendations-result', 
+          `❌ Erreur:\n${error.message}`,
+          'error'
+        );
+      }
+    }
+
+    async function testSearch() {
+      const query = document.getElementById('searchQuery').value;
+      log('search-result', 'Recherche en cours...');
+      
+      try {
+        const response = await fetch(API_BASE + 'v1/nlp/search/semantic', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ query })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        log('search-result', 
+          `✅ ${data.total_results || 0} résultats trouvés\n\n${JSON.stringify(data, null, 2)}`,
+          'success'
+        );
+      } catch (error) {
+        log('search-result', 
+          `❌ Erreur:\n${error.message}`,
+          'error'
+        );
+      }
+    }
+
+    async function testShoppingList() {
+      log('shopping-result', 'Test extension storage...');
+      
+      if (typeof chrome === 'undefined' || !chrome.storage) {
+        log('shopping-result', 
+          '⚠️ Cette fonction nécessite l\'extension Chrome.\n\nOuvrez cette page via l\'extension pour tester.',
+          'error'
+        );
+        return;
+      }
+      
+      try {
+        const result = await chrome.storage.local.get(['shopping_list_1']);
+        log('shopping-result', 
+          `✅ Liste de courses:\n\n${JSON.stringify(result, null, 2)}`,
+          'success'
+        );
+      } catch (error) {
+        log('shopping-result', 
+          `❌ Erreur:\n${error.message}`,
+          'error'
+        );
+      }
+    }
+
+    // Test automatique au chargement
+    window.onload = () => {
+      console.log('🧪 Page de test chargée');
+      testConnection();
+    };
+  </script>
+</body>
+</html>
